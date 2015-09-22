@@ -1,20 +1,55 @@
 #!/usr/bin/env perl6
 use v6;
 
-use JSON::Tiny;
+use JSON::Faster;
 use File::Find;
-use XML::Query;
 use HTML::Parser::XML;
 
 sub convert_and_save(IO::Path $file) {
-    say $file;
-    my $parser = HTML::Parser::XML.new;
-    my $html = $file.slurp-rest;
-    $parser.parse($html);
-    my $dom = $parser.xmldoc;
-    my $xq = XML::Query.new($dom);
+    my %article = ( meta => [], push => [], body => "" );
+    my $html = slurp $file;
+    my $dom = HTML::Parser::XML.new.parse($html);
+    my $node-main-content = $dom.getElementById("main-content");
+    return unless $node-main-content;
 
-    say $xq("#main-content").first.elem;
+    for $node-main-content.elements(:TAG<div>, :RECURSE<9>, :class<article-metaline>) -> $node {
+        my @meta-tags   = $node.elements(:TAG("span"), :class("article-meta-tag"));
+        my @meta-values = $node.elements(:TAG("span"), :class("article-meta-value"));
+        for zip(@meta-tags; @meta-values) -> ($t, $v) {
+            push @(%article<meta>), {
+                tag   => $t[0].contents.join,
+                value => $v[0].contents.join,
+            };
+        }
+        $node.remove();
+    }
+
+    for $node-main-content.elements(:TAG<div>, :class<push>) -> $node {
+        # my @tt = $node.elements();
+        # say @tt.perl;
+
+        # my $tag        = $node.elements(:TAG<span>, :SINGLE(True), :class(/tag/));
+        # my $userid     = $node.elements(:TAG<span>, :SINGLE(True), :class(/userid/));
+        # my $content    = $node.elements(:TAG<span>, :SINGLE(True), :class(/content/));
+        # my $ipdatetime = $node.elements(:TAG<span>, :SINGLE(True), :class(/ipdatetime/));
+        # say $tag.perl;
+
+        # push @(%article<push>), {
+        #     tag => $tag.text.join,
+        #     userid => $userid.text.join,
+        #     content => $content.text.join,
+        #     ipdatetime => $ipdatetime.text.join
+        # };
+        
+        $node.remove();
+    }
+
+    %article<body> = $node-main-content.contents.join;
+
+    my $output_file = "$file";
+    $output_file ~~ s/ \.html $/.json/;
+    spurt $output_file, to-json(%article);
+    say "DONE $output_file ";
 }
 
 sub main(Str $input_dir) {
