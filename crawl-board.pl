@@ -3,6 +3,7 @@ use v6;
 
 use File::Directory::Tree;
 use HTTP::UserAgent;
+use HTML::Parser::XML;
 
 my constant PTT_URL = "https://www.ptt.cc";
 
@@ -18,15 +19,19 @@ sub ptt_get($url) {
 
 sub harvest_board_indices(Str $board_url, Str $board_name) {
     my $res = ptt_get($board_url);
+    my $html = $res.content;
+    my $dom = HTML::Parser::XML.new.parse($html);
 
-    say $res.perl;
-
-    my Hash @boards;
-    my %h;
-    @boards.push: ${ :page_number<1>, :url<"/foobar1"> };
-
-    %h = :page_number<2>, :url<"/foobar2">;
-    @boards.push: $%h;
+    my @boards;
+    for $dom.elements(:TAG<a>, :RECURSE<99>, :href) -> $el {
+        if (my $href = $el.attribs<href>) ~~ rx/index (<[0..9]>+) \.html $/ {
+            @boards.push: ${ :page_number($0), :url($href) };
+        }
+    };
+    @boards = @boards[1,0] if @boards[0]<page_number> > @boards[1]<page_number>;
+    for @boards[0]<page_number> .. @boards[1]<page_number> -> $n {
+        @boards.push: ${ :page_number($n), :url("/bbs/$board_name/index$n.html" ) }
+    }
     return @boards;
 }
 
@@ -37,14 +42,8 @@ sub main(Str $board_name, Str $output_dir) {
     mktree( $output_board_dir );
 
     my @board_indices = harvest_board_indices($board_url, $board_name);
-    say "---";
-    say @board_indices.perl;
-    my $i = 0;
-    for @board_indices {
-        say $i++;
-        say .<page_number>;
-        say .<url>;
-    }
+
+    .say for @board_indices;
 }
 
 main(@*ARGS[0], @*ARGS[1]);
