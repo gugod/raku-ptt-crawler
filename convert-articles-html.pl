@@ -16,10 +16,11 @@ sub convert_and_save(IO::Path $file) {
         my @meta-tags   = $node.elements(:TAG("span"), :class("article-meta-tag"));
         my @meta-values = $node.elements(:TAG("span"), :class("article-meta-value"));
         for zip(@meta-tags; @meta-values) -> ($t, $v) {
-            push @(%article<meta>), {
+            my $h = {
                 tag   => $t[0].contents.join,
                 value => $v[0].contents.join,
             };
+            %article<meta>.push($h);
         }
         $node.remove();
     }
@@ -29,14 +30,14 @@ sub convert_and_save(IO::Path $file) {
         my $userid     = $node.elements(:TAG<span>, :SINGLE(True), :class(/userid/));
         my $content    = $node.elements(:TAG<span>, :SINGLE(True), :class(/content/));
         my $ipdatetime = $node.elements(:TAG<span>, :SINGLE(True), :class(/ipdatetime/));
-        
-        push @(%article<push>), {
+
+        my $h = {
             :tag($tag.contents.join),
             :userid($userid.contents.join),
             :content($content.contents.join),
             :ipdatetime($ipdatetime.contents.join),
         };
-        
+        %article<push>.push($h);
         $node.remove();
     }
 
