@@ -25,21 +25,17 @@ sub convert_and_save(IO::Path $file) {
     }
 
     for $node-main-content.elements(:TAG<div>, :class<push>) -> $node {
-        # my @tt = $node.elements();
-        # say @tt.perl;
-
-        # my $tag        = $node.elements(:TAG<span>, :SINGLE(True), :class(/tag/));
-        # my $userid     = $node.elements(:TAG<span>, :SINGLE(True), :class(/userid/));
-        # my $content    = $node.elements(:TAG<span>, :SINGLE(True), :class(/content/));
-        # my $ipdatetime = $node.elements(:TAG<span>, :SINGLE(True), :class(/ipdatetime/));
-        # say $tag.perl;
-
-        # push @(%article<push>), {
-        #     tag => $tag.text.join,
-        #     userid => $userid.text.join,
-        #     content => $content.text.join,
-        #     ipdatetime => $ipdatetime.text.join
-        # };
+        my $tag        = $node.elements(:TAG<span>, :SINGLE(True), :class(/tag/));
+        my $userid     = $node.elements(:TAG<span>, :SINGLE(True), :class(/userid/));
+        my $content    = $node.elements(:TAG<span>, :SINGLE(True), :class(/content/));
+        my $ipdatetime = $node.elements(:TAG<span>, :SINGLE(True), :class(/ipdatetime/));
+        
+        push @(%article<push>), {
+            :tag($tag.contents.join),
+            :userid($userid.contents.join),
+            :content($content.contents.join),
+            :ipdatetime($ipdatetime.contents.join),
+        };
         
         $node.remove();
     }
