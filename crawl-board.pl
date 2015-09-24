@@ -55,7 +55,7 @@ sub harvest_board_indices(Str $board_url, Str $board_name) {
     return @boards;
 }
 
-sub main(Str $board_name, Str $output_dir) {
+sub MAIN(Str $board_name, Str $output_dir) {
     my $board_url = PTT_URL ~ "/bbs/{ $board_name }/index.html";
     my $output_board_dir = "{ $output_dir }/{ $board_name }";
 
@@ -68,4 +68,3 @@ sub main(Str $board_name, Str $output_dir) {
     }
 }
 
-main(@*ARGS[0], @*ARGS[1]);
