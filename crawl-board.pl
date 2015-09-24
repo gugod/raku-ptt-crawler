@@ -10,28 +10,29 @@ my constant PTT_URL = "https://www.ptt.cc";
 sub ptt_get($url) {
     state $ua = HTTP::UserAgent.new;
     my $res = $ua.get($url);
-    if $res.is-success {
-        return $res
-    } else {
-        die $res.status-line
-    }
+    return $res
 }
 
 sub download_articles(@articles, $output_dir) {
     for @articles -> $a {
-        say $a;
+        my $save_as = $output_dir ~ "/" ~ $a.<id> ~ ".html";
+        next if $save_as.IO ~~ :f;
+        my $res = ptt_get($a.<url>);
+        spurt($save_as, $res.content) if $res.is-success;
     }
 }
 
 sub harvest_articles(Str $url, Str $board_name) {
     say "$url == $board_name";
     my $res = ptt_get($url);
+    die $res.status-line unless $res.is-success;
+
     my $html = $res.content;
     my $dom = HTML::Parser::XML.new.parse($html);
     my @articles;
     for $dom.elements(:TAG<a>, :RECURSE<99>, :href) -> $el {
-        if (my $href = $el.attribs<href>) ~~ rx/ M \. <[0..9]>+ \. A \. <[A..Z0..9]>**3 \.html $/ {
-            @articles.push: ${ :subject($el.contents.join), :url(PTT_URL ~ $href) };
+        if (my $href = $el.attribs<href>) ~~ rx/ (M \. <[0..9]>+ \. A \. <[A..Z0..9]>**3) \.html $/ {
+            @articles.push: ${ :subject($el.contents.join), :id($0), :url(PTT_URL ~ $href) };
         }
     }
     return @articles;
@@ -39,6 +40,8 @@ sub harvest_articles(Str $url, Str $board_name) {
 
 sub harvest_board_indices(Str $board_url, Str $board_name) {
     my $res = ptt_get($board_url);
+    die $res.status-line unless $res.is-success;
+
     my $html = $res.content;
     my $dom = HTML::Parser::XML.new.parse($html);
 
