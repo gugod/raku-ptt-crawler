@@ -3,14 +3,15 @@ use v6;
 
 use File::Directory::Tree;
 use HTTP::UserAgent;
+use HTTP::Request;
 use HTML::Parser::XML;
 
 my constant PTT_URL = "https://www.ptt.cc";
 
 sub ptt_get($url) {
     state $ua = HTTP::UserAgent.new;
-    my $res = $ua.get($url);
-    return $res
+    state $req = HTTP::Request.new(GET => $url, Cookie => "over18=1");
+    return $ua.request($req);
 }
 
 sub download_articles(@articles, $output_dir) {
@@ -18,7 +19,10 @@ sub download_articles(@articles, $output_dir) {
         my $save_as = $output_dir ~ "/" ~ $a.<id> ~ ".html";
         next if $save_as.IO ~~ :f;
         my $res = ptt_get($a.<url>);
-        spurt($save_as, $res.content) if $res.is-success;
+        if $res.is-success {
+            spurt($save_as, $res.content);
+            say "==> $save_as";
+        }
     }
 }
 
