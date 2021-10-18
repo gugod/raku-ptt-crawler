@@ -1,5 +1,5 @@
 #!/usr/bin/env raku
-use JSON::Faster;
+use JSON::Fast;
 use File::Find;
 use HTML::Parser::XML;
 
