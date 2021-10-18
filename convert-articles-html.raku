@@ -1,6 +1,4 @@
-#!/usr/bin/env perl6
-use v6;
-
+#!/usr/bin/env raku
 use JSON::Faster;
 use File::Find;
 use HTML::Parser::XML;

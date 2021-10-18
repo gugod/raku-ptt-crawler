@@ -1,6 +1,4 @@
-#!/usr/bin/env perl6
-use v6;
-
+#!/usr/bin/env raku
 use File::Directory::Tree;
 use HTTP::UserAgent;
 use HTTP::Request;
